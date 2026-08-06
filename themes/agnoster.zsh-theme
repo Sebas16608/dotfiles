@@ -1,0 +1,92 @@
+# ==========================
+# Agnoster Personalizado
+# ==========================
+
+CURRENT_FG='black'
+
+prompt_segment() {
+    local bg fg
+
+    [[ -n $1 ]] && bg="%K{$1}" || bg="%k"
+    [[ -n $2 ]] && fg="%F{$2}" || fg="%f"
+
+    if [[ $CURRENT_BG != NONE && $1 != $CURRENT_BG ]]; then
+        print -n "%{%F{$CURRENT_BG}%}"
+    fi
+
+    CURRENT_BG=$1
+
+    print -n "%{$bg$fg%} $3 "
+}
+
+prompt_end() {
+    if [[ -n $CURRENT_BG ]]; then
+        print -n "%{%k%F{$CURRENT_BG}%}"
+    fi
+    print -n "%{%f%}"
+}
+
+prompt_context() {
+    if [[ "$USER" != "$DEFAULT_USER" ]]; then
+        prompt_segment blue black "%n"
+    fi
+}
+
+prompt_dir() {
+    prompt_segment cyan black "%2~"
+}
+
+prompt_git() {
+    local ref
+    ref=$(git symbolic-ref --short HEAD 2>/dev/null) || return
+
+    prompt_segment green black " $ref"
+}
+
+prompt_python() {
+    [[ -n "$VIRTUAL_ENV" ]] || return
+    prompt_segment yellow black "🐍 ${VIRTUAL_ENV:t}"
+}
+
+prompt_rust() {
+    [[ -f Cargo.toml ]] || return
+    prompt_segment 208 black "🦀 Rust"
+}
+
+prompt_c() {
+    local c_files=(*.c(N))
+    if [[ -f Makefile || -f CMakeLists.txt || ${#c_files} -gt 0 ]]; then
+        prompt_segment 025 white "⚙️  C"
+    fi
+}
+
+prompt_cpp() {
+    local cpp_files=(*.cpp(N) *.hpp(N))
+    if [[ ${#cpp_files} -gt 0 ]]; then
+        prompt_segment 033 white "⚡ C++"
+    fi
+}
+
+prompt_docker() {
+    [[ -f docker-compose.yml || -f compose.yaml ]] || return
+    prompt_segment blue white "🐳 Docker"
+}
+
+build_prompt() {
+
+    CURRENT_BG=NONE
+
+    prompt_context
+    prompt_dir
+    prompt_git
+    prompt_python
+    prompt_rust
+    prompt_c
+    prompt_cpp
+    prompt_docker
+
+    prompt_end
+}
+
+PROMPT='$(build_prompt)
+❯ '
